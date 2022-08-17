@@ -41,9 +41,8 @@ void UFishPlayerMovement::TickComponent(float DeltaTime, ELevelTick TickType,
 		CalculateGravityVelocity(DeltaTime);
 	}
 	CalculateWalkVelocity(DeltaTime, OnGround);
-
-	FHitResult Hit;
-	GetOwner()->AddActorWorldOffset((WalkVelocity + GravityVelocity) * DeltaTime, true, &Hit);
+	Move(DeltaTime);
+	GEngine->AddOnScreenDebugMessage(-1,-1, FColor::Red, FString::Printf(TEXT("%f"), MaxHeight));
 }
 
 void UFishPlayerMovement::BeginPlay()
@@ -54,17 +53,59 @@ void UFishPlayerMovement::BeginPlay()
 	ColShape = FCollisionShape::MakeSphere(PlayerRadius);
 }
 
+void UFishPlayerMovement::Move(const float DeltaTime) const
+{
+	float RemainingTime = DeltaTime;
+	FVector Velocity = GravityVelocity + WalkVelocity;
+	for (size_t Steps = 0; Steps < MaxMoveSteps; Steps++)
+	{
+		FHitResult Hit;
+		Owner->AddActorWorldOffset(Velocity * RemainingTime, true, &Hit);
+		if(Hit.bBlockingHit)
+		{
+			if (Hit.bStartPenetrating)
+			{
+				Owner->AddActorWorldOffset(Hit.Normal * (Hit.PenetrationDepth + .01));
+				continue;
+			}
+			Velocity = FVector::VectorPlaneProject(Velocity, Hit.Normal);
+			RemainingTime -= RemainingTime * Hit.Time;
+			continue;
+		}
+		return;
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("STEPBROTHER IM STUCK, unable to depenetrate"));
+}
+
 bool UFishPlayerMovement::GroundCheck()
 {
-	FHitResult GroundHit;
 	FVector Start = Owner->Collider->GetComponentLocation();
-	Start.Z -= PlayerHalfHeight - PlayerRadius;
-	const FVector End = Start + FVector::DownVector * (FloatHeight + 1);
-	GetWorld()->SweepSingleByChannel(GroundHit, Start, End, FQuat::Identity, ECC_Visibility, ColShape, QueryParams);
-	if(GroundHit.bBlockingHit)
+	Start.Z -= PlayerHalfHeight;
+	DrawDebugSphere(GetWorld(), Start, 1.f, 32, FColor::Green);
+	FVector End = Start + FVector::DownVector * (FloatHeight + 1.f);
+	DrawDebugSphere(GetWorld(), End, 1.f, 32, FColor::Red);
+	FHitResult GroundHit;
+    GetWorld()->LineTraceSingleByChannel(GroundHit, Start, End, ECC_Visibility, QueryParams);
+	
+	Start.Z += PlayerRadius;
+	End.Z += PlayerRadius;
+	FHitResult GroundSweep;
+	GetWorld()->SweepSingleByChannel(GroundSweep, Start, End, FQuat::Identity, ECC_Visibility, ColShape, QueryParams);
+	
+	if(GroundHit.bBlockingHit || GroundSweep.bBlockingHit)
 	{
-		DistanceToGround = GroundHit.Distance;
-		GroundNormal = GroundHit.Normal;
+		FHitResult HitToUse = GroundHit;
+		if (GroundHit.bBlockingHit)
+		{
+			const float SweepHitDirection = GroundSweep.ImpactPoint.Z - (Start.Z - PlayerRadius);
+			HitToUse = SweepHitDirection > 0? GroundSweep : GroundHit;
+			MaxHeight = FMath::Min(MaxHeight, SweepHitDirection);
+		}
+		
+		//check step up, diff in ground height
+		DistanceToGround = HitToUse.Distance;
+		GroundNormal = HitToUse.Normal; //check for slope
 		GravityVelocity = FVector::ZeroVector;
 		return true;
 	}

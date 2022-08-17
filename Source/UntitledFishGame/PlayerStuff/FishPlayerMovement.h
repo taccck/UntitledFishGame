@@ -18,6 +18,7 @@ protected:
 	virtual void BeginPlay() override;
 	
 private:
+	void Move(const float DeltaTime) const;
 	bool GroundCheck();
 	void CalculateWalkVelocity(const float DeltaTime, const bool OnGround);
 	void CalculateGravityVelocity(const float DeltaTime);
@@ -62,4 +63,9 @@ private:
 	FCollisionShape ColShape;
 	float PlayerRadius;
 	float PlayerHalfHeight;
+
+	const size_t MaxMoveSteps = 10;
+
+	//temp
+	float MaxHeight;
 };
