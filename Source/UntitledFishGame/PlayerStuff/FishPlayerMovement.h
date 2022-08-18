@@ -43,7 +43,7 @@ private:
 	UPROPERTY(EditAnywhere)
 	float WalkDeceleration = 4000.f;
 	UPROPERTY(EditAnywhere)
-	float FloatHeight = 10.f;
+	float FloatHeight = 20.5f;
 	UPROPERTY(EditAnywhere)
 	float FloatSpeed = 100.f;
 	UPROPERTY(EditAnywhere)

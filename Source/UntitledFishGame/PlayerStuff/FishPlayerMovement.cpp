@@ -48,8 +48,8 @@ void UFishPlayerMovement::TickComponent(float DeltaTime, ELevelTick TickType,
 void UFishPlayerMovement::BeginPlay()
 {
 	QueryParams.AddIgnoredActor(GetOwner());
-	PlayerRadius = Owner->Collider->GetScaledCapsuleRadius();
-	PlayerHalfHeight = Owner->Collider->GetScaledCapsuleHalfHeight();
+	PlayerRadius = 22.f;
+	PlayerHalfHeight = 33.f;
 	ColShape = FCollisionShape::MakeSphere(PlayerRadius);
 }
 
@@ -80,32 +80,16 @@ void UFishPlayerMovement::Move(const float DeltaTime) const
 
 bool UFishPlayerMovement::GroundCheck()
 {
-	FVector Start = Owner->Collider->GetComponentLocation();
-	Start.Z -= PlayerHalfHeight;
-	DrawDebugSphere(GetWorld(), Start, 1.f, 32, FColor::Green);
-	FVector End = Start + FVector::DownVector * (FloatHeight + 1.f);
-	DrawDebugSphere(GetWorld(), End, 1.f, 32, FColor::Red);
-	FHitResult GroundHit;
-    GetWorld()->LineTraceSingleByChannel(GroundHit, Start, End, ECC_Visibility, QueryParams);
-	
-	Start.Z += PlayerRadius;
-	End.Z += PlayerRadius;
+	FVector Start = Owner->GetActorLocation();
+	Start.Z -= PlayerHalfHeight - PlayerRadius;
+	const FVector End = Start + FVector::DownVector * (FloatHeight + 1.f);
 	FHitResult GroundSweep;
 	GetWorld()->SweepSingleByChannel(GroundSweep, Start, End, FQuat::Identity, ECC_Visibility, ColShape, QueryParams);
 	
-	if(GroundHit.bBlockingHit || GroundSweep.bBlockingHit)
+	if(GroundSweep.bBlockingHit)
 	{
-		FHitResult HitToUse = GroundHit;
-		if (GroundHit.bBlockingHit)
-		{
-			const float SweepHitDirection = GroundSweep.ImpactPoint.Z - (Start.Z - PlayerRadius);
-			HitToUse = SweepHitDirection > 0? GroundSweep : GroundHit;
-			MaxHeight = FMath::Min(MaxHeight, SweepHitDirection);
-		}
-		
-		//check step up, diff in ground height
-		DistanceToGround = HitToUse.Distance;
-		GroundNormal = HitToUse.Normal; //check for slope
+		DistanceToGround = GroundSweep.Distance;
+		GroundNormal = GroundSweep.Normal; //check for slope
 		GravityVelocity = FVector::ZeroVector;
 		return true;
 	}
@@ -122,9 +106,10 @@ void UFishPlayerMovement::CalculateWalkVelocity(const float DeltaTime, const boo
 		WalkVelocity += WalkDirection.GetSafeNormal() * InputSize * (WalkAcceleration * DeltaTime);
 		if (OnGround)
 		{
-			const FVector Right = FVector::CrossProduct(GroundNormal, WalkVelocity.GetSafeNormal());
+			//only project vector when walking down
+			/*const FVector Right = FVector::CrossProduct(GroundNormal, WalkVelocity.GetSafeNormal());
 			WalkDirection = FVector::CrossProduct(Right.GetSafeNormal(), GroundNormal);
-			WalkVelocity = WalkDirection.GetSafeNormal() * WalkVelocity.Length();
+			WalkVelocity = WalkDirection.GetSafeNormal() * WalkVelocity.Length();*/
 		}
 		if (WalkVelocity.SizeSquared() > FMath::Square(WalkSpeed)) //accelerated past max speed
 		{

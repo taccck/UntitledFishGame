@@ -4,6 +4,7 @@
 class UCapsuleComponent;
 class UInputComponent;
 class UFishPlayerMovement;
+class UStaticMeshComponent;
 
 UCLASS(Abstract)
 class AFishPlayer : public AActor
@@ -17,7 +18,7 @@ public:
 
 public:	
 	UPROPERTY(EditAnywhere)
-	UCapsuleComponent* Collider;
+	UStaticMeshComponent* Collider;
 
 private:
 	UPROPERTY(EditAnywhere)

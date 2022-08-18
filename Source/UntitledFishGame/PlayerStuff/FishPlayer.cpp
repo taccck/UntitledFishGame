@@ -1,12 +1,13 @@
 #include "FishPlayer.h"
 #include "FishPlayerMovement.h"
-#include "Components/CapsuleComponent.h"
+#include "Components/StaticMeshComponent.h"
 
 AFishPlayer::AFishPlayer()
 {
 	PrimaryActorTick.bCanEverTick = true;
-	Collider = CreateDefaultSubobject<UCapsuleComponent>(TEXT("Collider"));
+	Collider = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Collider"));
 	RootComponent = Collider;
+	Collider->SetVisibility(false);
 	MoveComp = CreateDefaultSubobject<UFishPlayerMovement>(TEXT("MovementComponent"));
 }
 
