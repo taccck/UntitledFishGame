@@ -21,7 +21,7 @@ private:
 	void Move(const float DeltaTime) const;
 	bool GroundCheck();
 	void CalculateWalkVelocity(const float DeltaTime, const bool OnGround);
-	void CalculateGravityVelocity(const float DeltaTime);
+	void CalculateGravityVelocity(const float DeltaTime, const bool OnGround);
 	void FloatUp(const float DeltaTime);
 	
 	void MoveForward(float Axis);
@@ -65,7 +65,4 @@ private:
 	float PlayerHalfHeight;
 
 	const size_t MaxMoveSteps = 10;
-
-	//temp
-	float MaxHeight;
 };

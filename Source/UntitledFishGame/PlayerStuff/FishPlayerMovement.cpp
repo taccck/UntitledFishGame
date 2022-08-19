@@ -36,13 +36,10 @@ void UFishPlayerMovement::TickComponent(float DeltaTime, ELevelTick TickType,
 	{
 		FloatUp(DeltaTime);
 	}
-	else
-	{
-		CalculateGravityVelocity(DeltaTime);
-	}
+	
+	CalculateGravityVelocity(DeltaTime, OnGround);
 	CalculateWalkVelocity(DeltaTime, OnGround);
 	Move(DeltaTime);
-	GEngine->AddOnScreenDebugMessage(-1,-1, FColor::Red, FString::Printf(TEXT("%f"), MaxHeight));
 }
 
 void UFishPlayerMovement::BeginPlay()
@@ -85,13 +82,12 @@ bool UFishPlayerMovement::GroundCheck()
 	const FVector End = Start + FVector::DownVector * (FloatHeight + 1.f);
 	FHitResult GroundSweep;
 	GetWorld()->SweepSingleByChannel(GroundSweep, Start, End, FQuat::Identity, ECC_Visibility, ColShape, QueryParams);
-	
+
 	if(GroundSweep.bBlockingHit)
 	{
 		DistanceToGround = GroundSweep.Distance;
-		GroundNormal = GroundSweep.Normal; //check for slope
-		GravityVelocity = FVector::ZeroVector;
-		return true;
+		GroundNormal = GroundSweep.Normal; 
+		return acos(FVector::DotProduct(GroundNormal, FVector::UpVector)) * 57.2957795f < 45.1f;
 	}
 	return false;
 }
@@ -104,12 +100,12 @@ void UFishPlayerMovement::CalculateWalkVelocity(const float DeltaTime, const boo
 		const float AngleToRotate = PlayerController->GetControlRotation().Yaw;
 		FVector WalkDirection = WalkInput.RotateAngleAxis(AngleToRotate, FVector::UpVector);
 		WalkVelocity += WalkDirection.GetSafeNormal() * InputSize * (WalkAcceleration * DeltaTime);
-		if (OnGround)
+		const bool WalkingDown = OnGround && FVector::DotProduct(GroundNormal.GetSafeNormal2D(), WalkInput.GetSafeNormal2D());
+		if (WalkingDown)
 		{
-			//only project vector when walking down
-			/*const FVector Right = FVector::CrossProduct(GroundNormal, WalkVelocity.GetSafeNormal());
+			const FVector Right = FVector::CrossProduct(GroundNormal, WalkVelocity.GetSafeNormal());
 			WalkDirection = FVector::CrossProduct(Right.GetSafeNormal(), GroundNormal);
-			WalkVelocity = WalkDirection.GetSafeNormal() * WalkVelocity.Length();*/
+			WalkVelocity = WalkDirection.GetSafeNormal() * WalkVelocity.Length();
 		}
 		if (WalkVelocity.SizeSquared() > FMath::Square(WalkSpeed)) //accelerated past max speed
 		{
@@ -132,8 +128,14 @@ void UFishPlayerMovement::CalculateWalkVelocity(const float DeltaTime, const boo
 	WalkVelocity = FVector::Zero();
 }
 
-void UFishPlayerMovement::CalculateGravityVelocity(const float DeltaTime)
+void UFishPlayerMovement::CalculateGravityVelocity(const float DeltaTime, const bool OnGround)
 {
+	if(OnGround)
+	{
+		GravityVelocity = FVector::Zero();
+		return;
+	}
+	
 	if (GravityVelocity.SizeSquared() < FMath::Square(TerminalFallSpeed))
 	{
 		GravityVelocity += FVector::DownVector * (3000.f * DeltaTime);
