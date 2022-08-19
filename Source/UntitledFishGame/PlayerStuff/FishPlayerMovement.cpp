@@ -41,6 +41,7 @@ void UFishPlayerMovement::TickComponent(float DeltaTime, ELevelTick TickType,
 	CalculateGravityVelocity(DeltaTime, bOnGround);
 	CalculateWalkVelocity(DeltaTime, bOnGround);
 	Move(DeltaTime);
+	Rotate(DeltaTime);
 }
 
 void UFishPlayerMovement::BeginPlay()
@@ -101,6 +102,11 @@ void UFishPlayerMovement::CalculateWalkVelocity(const float DeltaTime, const boo
 	{
 		const float AngleToRotate = PlayerController->GetControlRotation().Yaw;
 		const FVector WalkDirection = WalkInput.RotateAngleAxis(AngleToRotate, FVector::UpVector);
+		TargetYaw = acos(WalkDirection.X);
+		if (WalkDirection.Y < 0.f)
+		{
+			TargetYaw = 2 * PI - TargetYaw;
+		}
 		WalkVelocity += WalkDirection.GetSafeNormal() * InputSize * (WalkAcceleration * DeltaTime);
 		const bool bWalkingDown = bOnGround && FVector::DotProduct(GroundNormal.GetSafeNormal2D(), WalkInput.GetSafeNormal2D());
 		if (bWalkingDown)
@@ -133,11 +139,13 @@ void UFishPlayerMovement::CalculateWalkVelocity(const float DeltaTime, const boo
 void UFishPlayerMovement::CalculateGravityVelocity(const float DeltaTime, const bool bOnGround)
 {
 	const bool bJumpTime = CurrentJumpTime > 0.f && CurrentJumpTime < JumpInputTime;
-	const bool bJumpConditions = bJumpTime || bOnGround;
+	const bool bCoyoteTime = CurrentCoyoteTime < CoyoteTime;
+	const bool bJumpConditions = bJumpTime || bCoyoteTime || bOnGround;
 	if(bJumpConditions && bDoJump)
 	{
 		GravityVelocity = FVector::UpVector * 300.f;
 		CurrentJumpTime += DeltaTime;
+		CurrentCoyoteTime = 100000.f;
 		return;
 	}
 	bDoJump = false;
@@ -146,9 +154,11 @@ void UFishPlayerMovement::CalculateGravityVelocity(const float DeltaTime, const 
 	if(bOnGround)
 	{
 		GravityVelocity = FVector::ZeroVector;
+		CurrentCoyoteTime = 0.f;
 		return;
 	}
 
+	CurrentCoyoteTime += DeltaTime;
 	const bool bPassedTerminalVelocity = GravityVelocity.SizeSquared() < FMath::Square(TerminalFallSpeed);
 	if (bPassedTerminalVelocity)
 	{
@@ -156,14 +166,30 @@ void UFishPlayerMovement::CalculateGravityVelocity(const float DeltaTime, const 
 	}
 }
 
-void UFishPlayerMovement::FloatUp(const float DeltaTime)
+void UFishPlayerMovement::FloatUp(const float DeltaTime) const
 {
 	if (DistanceToGround < FloatHeight)
 	{
 		const float DistToMove = FMath::Clamp(FloatSpeed * DeltaTime, 0.f, FloatHeight - DistanceToGround);
-		GetOwner()->AddActorWorldOffset(FVector::UpVector * DistToMove);
+		Owner->AddActorWorldOffset(FVector::UpVector * DistToMove);
 	}
 }
+
+void UFishPlayerMovement::Rotate(const float DeltaTime)
+{
+	FRotator Rotation = Owner->GetActorRotation();
+	float Distance = TargetYaw * 57.2957795f - Rotation.Yaw;
+	const float AbsDistance = abs(Distance);
+	if(AbsDistance < 1.f) return;
+	if (AbsDistance > 180)
+	{
+		const float Sign = Distance / AbsDistance * -1;
+		Distance = (360 - AbsDistance) * Sign;
+	}
+	Rotation.Yaw += Distance * DeltaTime * RotationSpeed;
+	Owner->SetActorRotation(Rotation);
+}
+
 
 void UFishPlayerMovement::Jump()
 {

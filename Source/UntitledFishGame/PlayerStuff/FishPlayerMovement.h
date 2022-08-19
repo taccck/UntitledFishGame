@@ -22,7 +22,8 @@ private:
 	bool GroundCheck();
 	void CalculateWalkVelocity(const float DeltaTime, const bool OnGround);
 	void CalculateGravityVelocity(const float DeltaTime, const bool OnGround);
-	void FloatUp(const float DeltaTime);
+	void FloatUp(const float DeltaTime) const;
+	void Rotate(const float DeltaTime);
 
 	void Jump();
 	void StopJump();
@@ -38,6 +39,8 @@ private:
 	float GamepadTurnRate = 100.f;
 	UPROPERTY(EditAnywhere, Category = "Move|Look")
 	float MouseSensitivity = .5f;
+	UPROPERTY(EditAnywhere, Category = "Move|Look")
+	float RotationSpeed = 8.f;
 	UPROPERTY(EditAnywhere, Category = "Move|Walk")
 	float WalkSpeed = 300.f;
 	UPROPERTY(EditAnywhere, Category = "Move|Walk")
@@ -58,7 +61,9 @@ private:
 	float JumpSpeed = 300.f;
 	UPROPERTY(EditAnywhere, Category = "Move|Jump")
 	float JumpInputTime = .2f;
-
+	UPROPERTY(EditAnywhere, Category = "Move|Jump")
+	float CoyoteTime = .2f;
+	
 	TWeakObjectPtr<AFishPlayer> Owner;
 	TWeakObjectPtr<APlayerController> PlayerController;
 	FVector WalkInput;
@@ -66,9 +71,12 @@ private:
 	FVector GravityVelocity;
 	FVector GroundNormal;
 	float DistanceToGround;
-	bool bDoJump;
 	float CurrentJumpTime;
-
+	float CurrentCoyoteTime;
+	float TargetYaw;
+	float CurrentYaw = 0;
+	bool bDoJump;
+	
 	FCollisionQueryParams QueryParams;
 	FCollisionShape ColShape;
 	float PlayerRadius;
