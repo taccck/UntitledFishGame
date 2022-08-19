@@ -34,29 +34,29 @@ private:
 	void LookRight(float Delta);
 
 private:
-	UPROPERTY(EditAnywhere)
-	float TurnRate = 100.f;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Move|Look")
+	float GamepadTurnRate = 100.f;
+	UPROPERTY(EditAnywhere, Category = "Move|Look")
 	float MouseSensitivity = .5f;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Move|Walk")
 	float WalkSpeed = 300.f;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Move|Walk")
 	float WalkAcceleration = 3000.f;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Move|Walk")
 	float WalkDeceleration = 4000.f;
-	UPROPERTY(EditAnywhere)
-	float FloatHeight = 20.5f;
-	UPROPERTY(EditAnywhere)
-	float FloatSpeed = 100.f;
-	UPROPERTY(EditAnywhere)
-	float GravityAcceleration = 3000.f;
-	UPROPERTY(EditAnywhere)
-	float TerminalFallSpeed = 6000.f;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Move|Walk")
 	float WalkableSlope = 45.f;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Move|Float")
+	float FloatHeight = 20.5f;
+	UPROPERTY(EditAnywhere, Category = "Move|Float")
+	float FloatSpeed = 100.f;
+	UPROPERTY(EditAnywhere, Category = "Move|Gravity")
+	float GravityAcceleration = 3000.f;
+	UPROPERTY(EditAnywhere, Category = "Move|Gravity")
+	float TerminalFallSpeed = 6000.f;
+	UPROPERTY(EditAnywhere, Category = "Move|Jump")
 	float JumpSpeed = 300.f;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Move|Jump")
 	float JumpInputTime = .2f;
 
 	TWeakObjectPtr<AFishPlayer> Owner;
@@ -66,7 +66,7 @@ private:
 	FVector GravityVelocity;
 	FVector GroundNormal;
 	float DistanceToGround;
-	bool DoJump;
+	bool bDoJump;
 	float CurrentJumpTime;
 
 	FCollisionQueryParams QueryParams;

@@ -1,5 +1,4 @@
 #include "FishPlayerMovement.h"
-#include "Components/CapsuleComponent.h"
 #include "FishPlayer.h"
 
 UFishPlayerMovement::UFishPlayerMovement()
@@ -33,14 +32,14 @@ void UFishPlayerMovement::TickComponent(float DeltaTime, ELevelTick TickType,
 	FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	const bool OnGround = GroundCheck();
-	if(OnGround)
+	const bool bOnGround = GroundCheck();
+	if(bOnGround)
 	{
 		FloatUp(DeltaTime);
 	}
 	
-	CalculateGravityVelocity(DeltaTime, OnGround);
-	CalculateWalkVelocity(DeltaTime, OnGround);
+	CalculateGravityVelocity(DeltaTime, bOnGround);
+	CalculateWalkVelocity(DeltaTime, bOnGround);
 	Move(DeltaTime);
 }
 
@@ -95,33 +94,33 @@ bool UFishPlayerMovement::GroundCheck()
 	return false;
 }
 
-void UFishPlayerMovement::CalculateWalkVelocity(const float DeltaTime, const bool OnGround)
+void UFishPlayerMovement::CalculateWalkVelocity(const float DeltaTime, const bool bOnGround)
 {
 	const float InputSize = FMath::Clamp(WalkInput.Length(), 0.f,1.f);
-	if (InputSize > 0.f)
+	if (InputSize > 0.f) //accelerate
 	{
 		const float AngleToRotate = PlayerController->GetControlRotation().Yaw;
-		FVector WalkDirection = WalkInput.RotateAngleAxis(AngleToRotate, FVector::UpVector);
+		const FVector WalkDirection = WalkInput.RotateAngleAxis(AngleToRotate, FVector::UpVector);
 		WalkVelocity += WalkDirection.GetSafeNormal() * InputSize * (WalkAcceleration * DeltaTime);
-		const bool WalkingDown = OnGround && FVector::DotProduct(GroundNormal.GetSafeNormal2D(), WalkInput.GetSafeNormal2D());
-		if (WalkingDown)
+		const bool bWalkingDown = bOnGround && FVector::DotProduct(GroundNormal.GetSafeNormal2D(), WalkInput.GetSafeNormal2D());
+		if (bWalkingDown)
 		{
-			const FVector Right = FVector::CrossProduct(GroundNormal, WalkVelocity.GetSafeNormal());
-			WalkDirection = FVector::CrossProduct(Right.GetSafeNormal(), GroundNormal);
-			WalkVelocity = WalkDirection.GetSafeNormal() * WalkVelocity.Length();
+			WalkVelocity = FVector::VectorPlaneProject(WalkVelocity, GroundNormal);
 		}
-		if (WalkVelocity.SizeSquared() > FMath::Square(WalkSpeed)) //accelerated past max speed
+		const bool bPassedMaxSpeed = WalkVelocity.SizeSquared() > FMath::Square(WalkSpeed);
+		if (bPassedMaxSpeed) 
 		{
 			WalkVelocity = WalkVelocity.GetSafeNormal() * WalkSpeed;
 		}
 		return;
 	}
 	
-	if(WalkVelocity.SizeSquared() > 1.f)
+	if(WalkVelocity.SizeSquared() > 1.f) //decelerate
 	{
 		const FVector WalkDirection = WalkVelocity.GetSafeNormal();
 		WalkVelocity -= WalkDirection * (WalkDeceleration * DeltaTime);
-		if (WalkVelocity.GetSafeNormal().Dot(WalkDirection) < 0.f) //decelerated past zero
+		const bool bPassedZeroSpeed = WalkVelocity.GetSafeNormal().Dot(WalkDirection) < 0.f;
+		if (bPassedZeroSpeed)
 		{
 			WalkVelocity = FVector::ZeroVector;
 		}
@@ -131,28 +130,29 @@ void UFishPlayerMovement::CalculateWalkVelocity(const float DeltaTime, const boo
 	WalkVelocity = FVector::ZeroVector;
 }
 
-void UFishPlayerMovement::CalculateGravityVelocity(const float DeltaTime, const bool OnGround)
+void UFishPlayerMovement::CalculateGravityVelocity(const float DeltaTime, const bool bOnGround)
 {
-	const bool JumpTime = CurrentJumpTime > 0.f && CurrentJumpTime < JumpInputTime;
-	const bool JumpConditions = JumpTime || OnGround;
-	if(JumpConditions && DoJump)
+	const bool bJumpTime = CurrentJumpTime > 0.f && CurrentJumpTime < JumpInputTime;
+	const bool bJumpConditions = bJumpTime || bOnGround;
+	if(bJumpConditions && bDoJump)
 	{
 		GravityVelocity = FVector::UpVector * 300.f;
 		CurrentJumpTime += DeltaTime;
 		return;
 	}
-	DoJump = false;
+	bDoJump = false;
 	CurrentJumpTime = 0.f;
 	
-	if(OnGround)
+	if(bOnGround)
 	{
 		GravityVelocity = FVector::ZeroVector;
 		return;
 	}
-	
-	if (GravityVelocity.SizeSquared() < FMath::Square(TerminalFallSpeed))
+
+	const bool bPassedTerminalVelocity = GravityVelocity.SizeSquared() < FMath::Square(TerminalFallSpeed);
+	if (bPassedTerminalVelocity)
 	{
-		GravityVelocity += FVector::DownVector * (3000.f * DeltaTime);
+		GravityVelocity += FVector::DownVector * (GravityAcceleration * DeltaTime);
 	}
 }
 
@@ -167,12 +167,12 @@ void UFishPlayerMovement::FloatUp(const float DeltaTime)
 
 void UFishPlayerMovement::Jump()
 {
-	DoJump = true;
+	bDoJump = true;
 }
 
 void UFishPlayerMovement::StopJump()
 {
-	DoJump = false;
+	bDoJump = false;
 }
 
 void UFishPlayerMovement::MoveForward(float Axis)
@@ -187,13 +187,13 @@ void UFishPlayerMovement::MoveRight(float Axis)
 
 void UFishPlayerMovement::TurnUp(float Axis)
 {
-	const float DeltaPitch = GetWorld()->DeltaTimeSeconds * TurnRate/2.f * Axis;
+	const float DeltaPitch = GetWorld()->DeltaTimeSeconds * GamepadTurnRate/2.f * Axis;
 	PlayerController->AddPitchInput(DeltaPitch);
 }
 
 void UFishPlayerMovement::TurnRight(float Axis)
 {
-	const float DeltaYaw = GetWorld()->DeltaTimeSeconds * TurnRate * Axis;
+	const float DeltaYaw = GetWorld()->DeltaTimeSeconds * GamepadTurnRate * Axis;
 	PlayerController->AddYawInput(DeltaYaw);
 }
 
