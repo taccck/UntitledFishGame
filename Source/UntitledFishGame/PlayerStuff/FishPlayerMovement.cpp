@@ -18,6 +18,8 @@ void UFishPlayerMovement::BindInput(UInputComponent* InputComp, APlayerControlle
 	InputComp->BindAxis(TEXT("TurnRight"), this, &UFishPlayerMovement::TurnRight);
 	InputComp->BindAxis(TEXT("LookUp"), this, &UFishPlayerMovement::LookUp);
 	InputComp->BindAxis(TEXT("LookRight"), this, &UFishPlayerMovement::LookRight);
+	InputComp->BindAction(TEXT("Jump"), IE_Pressed, this, &UFishPlayerMovement::Jump);
+	InputComp->BindAction(TEXT("Jump"), IE_Released, this, &UFishPlayerMovement::StopJump);
 }
 
 void UFishPlayerMovement::UnbindInput(UInputComponent* InputComp)
@@ -48,6 +50,7 @@ void UFishPlayerMovement::BeginPlay()
 	PlayerRadius = 22.f;
 	PlayerHalfHeight = 33.f;
 	ColShape = FCollisionShape::MakeSphere(PlayerRadius);
+	WalkableSlope += .1f;
 }
 
 void UFishPlayerMovement::Move(const float DeltaTime) const
@@ -87,7 +90,7 @@ bool UFishPlayerMovement::GroundCheck()
 	{
 		DistanceToGround = GroundSweep.Distance;
 		GroundNormal = GroundSweep.Normal; 
-		return acos(FVector::DotProduct(GroundNormal, FVector::UpVector)) * 57.2957795f < 45.1f;
+		return acos(FVector::DotProduct(GroundNormal, FVector::UpVector)) * 57.2957795f < WalkableSlope;
 	}
 	return false;
 }
@@ -120,19 +123,30 @@ void UFishPlayerMovement::CalculateWalkVelocity(const float DeltaTime, const boo
 		WalkVelocity -= WalkDirection * (WalkDeceleration * DeltaTime);
 		if (WalkVelocity.GetSafeNormal().Dot(WalkDirection) < 0.f) //decelerated past zero
 		{
-			WalkVelocity = FVector::Zero();
+			WalkVelocity = FVector::ZeroVector;
 		}
 		return;
 	}
 	
-	WalkVelocity = FVector::Zero();
+	WalkVelocity = FVector::ZeroVector;
 }
 
 void UFishPlayerMovement::CalculateGravityVelocity(const float DeltaTime, const bool OnGround)
 {
+	const bool JumpTime = CurrentJumpTime > 0.f && CurrentJumpTime < JumpInputTime;
+	const bool JumpConditions = JumpTime || OnGround;
+	if(JumpConditions && DoJump)
+	{
+		GravityVelocity = FVector::UpVector * 300.f;
+		CurrentJumpTime += DeltaTime;
+		return;
+	}
+	DoJump = false;
+	CurrentJumpTime = 0.f;
+	
 	if(OnGround)
 	{
-		GravityVelocity = FVector::Zero();
+		GravityVelocity = FVector::ZeroVector;
 		return;
 	}
 	
@@ -149,6 +163,16 @@ void UFishPlayerMovement::FloatUp(const float DeltaTime)
 		const float DistToMove = FMath::Clamp(FloatSpeed * DeltaTime, 0.f, FloatHeight - DistanceToGround);
 		GetOwner()->AddActorWorldOffset(FVector::UpVector * DistToMove);
 	}
+}
+
+void UFishPlayerMovement::Jump()
+{
+	DoJump = true;
+}
+
+void UFishPlayerMovement::StopJump()
+{
+	DoJump = false;
 }
 
 void UFishPlayerMovement::MoveForward(float Axis)

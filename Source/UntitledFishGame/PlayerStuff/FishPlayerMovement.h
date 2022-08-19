@@ -23,7 +23,9 @@ private:
 	void CalculateWalkVelocity(const float DeltaTime, const bool OnGround);
 	void CalculateGravityVelocity(const float DeltaTime, const bool OnGround);
 	void FloatUp(const float DeltaTime);
-	
+
+	void Jump();
+	void StopJump();
 	void MoveForward(float Axis);
 	void MoveRight(float Axis);
 	void TurnUp(float Axis);
@@ -50,6 +52,12 @@ private:
 	float GravityAcceleration = 3000.f;
 	UPROPERTY(EditAnywhere)
 	float TerminalFallSpeed = 6000.f;
+	UPROPERTY(EditAnywhere)
+	float WalkableSlope = 45.f;
+	UPROPERTY(EditAnywhere)
+	float JumpSpeed = 300.f;
+	UPROPERTY(EditAnywhere)
+	float JumpInputTime = .2f;
 
 	TWeakObjectPtr<AFishPlayer> Owner;
 	TWeakObjectPtr<APlayerController> PlayerController;
@@ -58,6 +66,8 @@ private:
 	FVector GravityVelocity;
 	FVector GroundNormal;
 	float DistanceToGround;
+	bool DoJump;
+	float CurrentJumpTime;
 
 	FCollisionQueryParams QueryParams;
 	FCollisionShape ColShape;
