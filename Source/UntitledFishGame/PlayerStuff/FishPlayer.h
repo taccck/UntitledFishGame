@@ -15,12 +15,12 @@ public:
 	AFishPlayer();
 	virtual void EnableInput(APlayerController* PlayerController) override;
 	virtual void DisableInput(APlayerController* PlayerController) override;
-
+	UFUNCTION(BlueprintImplementableEvent, meta=(DisplayName = "Fishing"))
+	void ReceiveFishing();
+	
 public:	
 	UPROPERTY(EditAnywhere)
 	UStaticMeshComponent* Collider;
-
-private:
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UFishPlayerMovement* MoveComp;
 };

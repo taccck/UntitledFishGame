@@ -19,6 +19,7 @@ void UFishPlayerMovement::BindInput(UInputComponent* InputComp, APlayerControlle
 	InputComp->BindAxis(TEXT("LookRight"), this, &UFishPlayerMovement::LookRight);
 	InputComp->BindAction(TEXT("Jump"), IE_Pressed, this, &UFishPlayerMovement::Jump);
 	InputComp->BindAction(TEXT("Jump"), IE_Released, this, &UFishPlayerMovement::StopJump);
+	InputComp->BindAction(TEXT("Fish"), IE_Pressed, this, &UFishPlayerMovement::Fishing);
 }
 
 void UFishPlayerMovement::UnbindInput(UInputComponent* InputComp)
@@ -98,7 +99,8 @@ bool UFishPlayerMovement::GroundCheck()
 void UFishPlayerMovement::CalculateWalkVelocity(const float DeltaTime, const bool bOnGround)
 {
 	const float InputSize = FMath::Clamp(WalkInput.Length(), 0.f,1.f);
-	if (InputSize > 0.f) //accelerate
+	const bool bCanWalk = InputSize > 0.f && !bIsFishing;
+	if (bCanWalk) //accelerate
 	{
 		const float AngleToRotate = PlayerController->GetControlRotation().Yaw;
 		const FVector WalkDirection = WalkInput.RotateAngleAxis(AngleToRotate, FVector::UpVector);
@@ -177,8 +179,8 @@ void UFishPlayerMovement::FloatUp(const float DeltaTime) const
 
 void UFishPlayerMovement::Rotate(const float DeltaTime)
 {
-	FRotator Rotation = Owner->GetActorRotation();
-	float Distance = TargetYaw * 57.2957795f - Rotation.Yaw;
+	/*float Yaw = Owner->GetActorRotation().Yaw;
+	float Distance = TargetYaw * 57.2957795f - Yaw;
 	const float AbsDistance = abs(Distance);
 	if(AbsDistance < 1.f) return;
 	if (AbsDistance > 180)
@@ -186,14 +188,20 @@ void UFishPlayerMovement::Rotate(const float DeltaTime)
 		const float Sign = Distance / AbsDistance * -1;
 		Distance = (360 - AbsDistance) * Sign;
 	}
-	Rotation.Yaw += Distance * DeltaTime * RotationSpeed;
-	Owner->SetActorRotation(Rotation);
+	Yaw += Distance * DeltaTime * RotationSpeed;
+	Owner->SetActorRotation(FRotator(0,Yaw,0));*/
+	FQuat Rotation = Owner->GetActorQuat();
+	FQuat TargetRotation = FQuat(FVector::UpVector, TargetYaw);
+	Owner->SetActorRotation(FQuat::Slerp(Rotation,TargetRotation, DeltaTime * RotationSpeed));
 }
 
 
 void UFishPlayerMovement::Jump()
 {
-	bDoJump = true;
+	if(!bIsFishing)
+	{
+		bDoJump = true;
+	}
 }
 
 void UFishPlayerMovement::StopJump()
@@ -233,4 +241,10 @@ void UFishPlayerMovement::LookRight(float Delta)
 {
 	const float DeltaYaw = MouseSensitivity * Delta;
 	PlayerController->AddYawInput(DeltaYaw);
+}
+
+void UFishPlayerMovement::Fishing()
+{
+	Owner->ReceiveFishing();
+	bIsFishing = !bIsFishing;
 }

@@ -4,7 +4,7 @@
 class APlayerController;
 class AFishPlayer;
 
-UCLASS()
+UCLASS(Blueprintable)
 class UFishPlayerMovement : public UActorComponent
 {
 	GENERATED_BODY()
@@ -33,7 +33,12 @@ private:
 	void TurnRight(float Axis);
 	void LookUp(float Delta);
 	void LookRight(float Delta);
+	void Fishing();
 
+public:
+	UPROPERTY(BlueprintReadWrite)
+	bool bIsFishing = false;
+	
 private:
 	UPROPERTY(EditAnywhere, Category = "Move|Look")
 	float GamepadTurnRate = 100.f;
@@ -52,7 +57,7 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Move|Float")
 	float FloatHeight = 20.5f;
 	UPROPERTY(EditAnywhere, Category = "Move|Float")
-	float FloatSpeed = 100.f;
+	float FloatSpeed = 125.f;
 	UPROPERTY(EditAnywhere, Category = "Move|Gravity")
 	float GravityAcceleration = 3000.f;
 	UPROPERTY(EditAnywhere, Category = "Move|Gravity")
@@ -62,7 +67,7 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Move|Jump")
 	float JumpInputTime = .2f;
 	UPROPERTY(EditAnywhere, Category = "Move|Jump")
-	float CoyoteTime = .2f;
+	float CoyoteTime = .15f;
 	
 	TWeakObjectPtr<AFishPlayer> Owner;
 	TWeakObjectPtr<APlayerController> PlayerController;
