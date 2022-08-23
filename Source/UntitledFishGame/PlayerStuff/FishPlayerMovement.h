@@ -23,7 +23,7 @@ private:
 	void CalculateWalkVelocity(const float DeltaTime, const bool OnGround);
 	void CalculateGravityVelocity(const float DeltaTime, const bool OnGround);
 	void FloatUp(const float DeltaTime) const;
-	void Rotate(const float DeltaTime);
+	void Rotate(const float DeltaTime) const;
 
 	void Jump();
 	void StopJump();
@@ -78,10 +78,9 @@ private:
 	float DistanceToGround;
 	float CurrentJumpTime;
 	float CurrentCoyoteTime;
-	float TargetYaw;
-	float CurrentYaw = 0;
+	FQuat TargetRotation;
 	bool bDoJump;
-	
+
 	FCollisionQueryParams QueryParams;
 	FCollisionShape ColShape;
 	float PlayerRadius;

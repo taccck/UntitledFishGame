@@ -104,13 +104,9 @@ void UFishPlayerMovement::CalculateWalkVelocity(const float DeltaTime, const boo
 	{
 		const float AngleToRotate = PlayerController->GetControlRotation().Yaw;
 		const FVector WalkDirection = WalkInput.RotateAngleAxis(AngleToRotate, FVector::UpVector);
-		TargetYaw = acos(WalkDirection.X);
-		if (WalkDirection.Y < 0.f)
-		{
-			TargetYaw = 2 * PI - TargetYaw;
-		}
+		TargetRotation = WalkDirection.ToOrientationQuat();
 		WalkVelocity += WalkDirection.GetSafeNormal() * InputSize * (WalkAcceleration * DeltaTime);
-		const bool bWalkingDown = bOnGround && FVector::DotProduct(GroundNormal.GetSafeNormal2D(), WalkInput.GetSafeNormal2D());
+		const bool bWalkingDown = bOnGround && FVector::DotProduct(GroundNormal.GetSafeNormal2D(), WalkInput.GetSafeNormal2D()) > 0.f;
 		if (bWalkingDown)
 		{
 			WalkVelocity = FVector::VectorPlaneProject(WalkVelocity, GroundNormal);
@@ -177,21 +173,9 @@ void UFishPlayerMovement::FloatUp(const float DeltaTime) const
 	}
 }
 
-void UFishPlayerMovement::Rotate(const float DeltaTime)
+void UFishPlayerMovement::Rotate(const float DeltaTime) const
 {
-	/*float Yaw = Owner->GetActorRotation().Yaw;
-	float Distance = TargetYaw * 57.2957795f - Yaw;
-	const float AbsDistance = abs(Distance);
-	if(AbsDistance < 1.f) return;
-	if (AbsDistance > 180)
-	{
-		const float Sign = Distance / AbsDistance * -1;
-		Distance = (360 - AbsDistance) * Sign;
-	}
-	Yaw += Distance * DeltaTime * RotationSpeed;
-	Owner->SetActorRotation(FRotator(0,Yaw,0));*/
-	FQuat Rotation = Owner->GetActorQuat();
-	FQuat TargetRotation = FQuat(FVector::UpVector, TargetYaw);
+	const FQuat Rotation = Owner->GetActorQuat();
 	Owner->SetActorRotation(FQuat::Slerp(Rotation,TargetRotation, DeltaTime * RotationSpeed));
 }
 
