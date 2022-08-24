@@ -1,6 +1,7 @@
 #pragma once
-#include "Components/CapsuleComponent.h"
 #include "Fish.generated.h"
+
+class UCapsuleComponent;
 
 UCLASS(abstract)
 class AFish : public AActor

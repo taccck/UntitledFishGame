@@ -1,11 +1,7 @@
-#include "FishSpawner.h"
+#include "FishDataAsset.h"
+#include "Fish.h"
 
-UFishSpawner::UFishSpawner()
-{
-	PrimaryComponentTick.bCanEverTick = true;
-}
-
-AActor* UFishSpawner::SpawnFish(const int Level) const
+AActor* UFishDataAsset::SpawnFish(const int Level)
 {
 	TArray<TSubclassOf<AFish>> GradeClasses = GetGradeClasses(Level);
 
@@ -28,7 +24,7 @@ AActor* UFishSpawner::SpawnFish(const int Level) const
 	return nullptr;
 }
 
-TArray<TSubclassOf<AFish>> UFishSpawner::GetGradeClasses(const int Level) const
+TArray<TSubclassOf<AFish>> UFishDataAsset::GetGradeClasses(const int Level)
 {
 	const double* Odds = GradeOdds[(Level - 1)];
 	constexpr double TotalOdds = Odds[0] + Odds[1] + Odds[2] + Odds[3] + Odds[4] + Odds[5] + Odds[6];
@@ -40,9 +36,8 @@ TArray<TSubclassOf<AFish>> UFishSpawner::GetGradeClasses(const int Level) const
 		CurrentOdds += Odds[i];
 		if (Grade <= CurrentOdds)
 		{
-			return FishTable->Fishies[i].Array;
+			return Fishies[i].Array;
 		}
 	}
 	return {};
 }
-

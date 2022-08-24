@@ -1,4 +1,5 @@
 #include "Fish.h"
+#include "Components/CapsuleComponent.h"
 
 AFish::AFish()
 {
