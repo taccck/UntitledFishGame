@@ -27,7 +27,7 @@ AActor* UFishDataAsset::SpawnFish(const int Level)
 TArray<TSubclassOf<AFish>> UFishDataAsset::GetGradeClasses(const int Level)
 {
 	const double* Odds = GradeOdds[(Level - 1)];
-	constexpr double TotalOdds = Odds[0] + Odds[1] + Odds[2] + Odds[3] + Odds[4] + Odds[5] + Odds[6];
+	double TotalOdds = Odds[0] + Odds[1] + Odds[2] + Odds[3] + Odds[4] + Odds[5] + Odds[6];
 	const double Grade = FMath::RandRange(.0 ,TotalOdds);
             
 	double CurrentOdds = 0;

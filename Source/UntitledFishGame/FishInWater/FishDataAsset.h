@@ -3,7 +3,7 @@
 
 class AFish;
 
-USTRUCT()
+USTRUCT(BlueprintType)
 struct FFishClassArray
 {
 	GENERATED_BODY()
