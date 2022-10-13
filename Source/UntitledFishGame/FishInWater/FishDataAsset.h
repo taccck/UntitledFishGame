@@ -7,6 +7,7 @@ USTRUCT(BlueprintType)
 struct FFishClassArray
 {
 	GENERATED_BODY()
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TArray<TSubclassOf<AFish>> Array;
 };
 
@@ -15,6 +16,7 @@ class UFishDataAsset : public UDataAsset
 {
 	GENERATED_BODY()
 public:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TArray<FFishClassArray> Fishies;
 	
 	AActor* SpawnFish(const int Level);

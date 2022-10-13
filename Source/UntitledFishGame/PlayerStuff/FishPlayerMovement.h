@@ -19,9 +19,9 @@ protected:
 	
 private:
 	void Move(const float DeltaTime) const;
-	bool GroundCheck();
-	void CalculateWalkVelocity(const float DeltaTime, const bool OnGround);
-	void CalculateGravityVelocity(const float DeltaTime, const bool OnGround);
+	void GroundCheck();
+	void CalculateWalkVelocity(const float DeltaTime);
+	void CalculateGravityVelocity(const float DeltaTime);
 	void FloatUp(const float DeltaTime) const;
 	void Rotate(const float DeltaTime) const;
 
@@ -38,6 +38,8 @@ private:
 public:
 	UPROPERTY(BlueprintReadWrite)
 	bool bIsFishing = false;
+	UPROPERTY(BlueprintReadOnly)
+	bool bOnGround = false;
 	
 private:
 	UPROPERTY(EditAnywhere, Category = "Move|Look")

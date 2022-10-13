@@ -33,14 +33,14 @@ void UFishPlayerMovement::TickComponent(float DeltaTime, ELevelTick TickType,
 	FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	const bool bOnGround = GroundCheck();
+	GroundCheck();
 	if(bOnGround)
 	{
 		FloatUp(DeltaTime);
 	}
 	
-	CalculateGravityVelocity(DeltaTime, bOnGround);
-	CalculateWalkVelocity(DeltaTime, bOnGround);
+	CalculateGravityVelocity(DeltaTime);
+	CalculateWalkVelocity(DeltaTime);
 	Move(DeltaTime);
 	Rotate(DeltaTime);
 }
@@ -79,7 +79,7 @@ void UFishPlayerMovement::Move(const float DeltaTime) const
 	UE_LOG(LogTemp, Warning, TEXT("STEPBROTHER IM STUCK, unable to depenetrate"));
 }
 
-bool UFishPlayerMovement::GroundCheck()
+void UFishPlayerMovement::GroundCheck()
 {
 	FVector Start = Owner->GetActorLocation();
 	Start.Z -= PlayerHalfHeight - PlayerRadius;
@@ -87,16 +87,16 @@ bool UFishPlayerMovement::GroundCheck()
 	FHitResult GroundSweep;
 	GetWorld()->SweepSingleByChannel(GroundSweep, Start, End, FQuat::Identity, ECC_Visibility, ColShape, QueryParams);
 
+	bOnGround = false;
 	if(GroundSweep.bBlockingHit)
 	{
 		DistanceToGround = GroundSweep.Distance;
 		GroundNormal = GroundSweep.Normal; 
-		return acos(FVector::DotProduct(GroundNormal, FVector::UpVector)) * 57.2957795f < WalkableSlope;
+		bOnGround = acos(FVector::DotProduct(GroundNormal, FVector::UpVector)) * 57.2957795f < WalkableSlope;
 	}
-	return false;
 }
 
-void UFishPlayerMovement::CalculateWalkVelocity(const float DeltaTime, const bool bOnGround)
+void UFishPlayerMovement::CalculateWalkVelocity(const float DeltaTime)
 {
 	const float InputSize = FMath::Clamp(WalkInput.Length(), 0.f,1.f);
 	const bool bCanWalk = InputSize > 0.f && !bIsFishing;
@@ -134,7 +134,7 @@ void UFishPlayerMovement::CalculateWalkVelocity(const float DeltaTime, const boo
 	WalkVelocity = FVector::ZeroVector;
 }
 
-void UFishPlayerMovement::CalculateGravityVelocity(const float DeltaTime, const bool bOnGround)
+void UFishPlayerMovement::CalculateGravityVelocity(const float DeltaTime)
 {
 	const bool bJumpTime = CurrentJumpTime > 0.f && CurrentJumpTime < JumpInputTime;
 	const bool bCoyoteTime = CurrentCoyoteTime < CoyoteTime;

@@ -5,6 +5,7 @@ class UCapsuleComponent;
 class UInputComponent;
 class UFishPlayerMovement;
 class UStaticMeshComponent;
+class UFishPlayerAnim;
 
 UCLASS(Abstract)
 class AFishPlayer : public AActor
@@ -23,4 +24,6 @@ public:
 	UStaticMeshComponent* Collider;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UFishPlayerMovement* MoveComp;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UFishPlayerAnim* AnimComp;
 };

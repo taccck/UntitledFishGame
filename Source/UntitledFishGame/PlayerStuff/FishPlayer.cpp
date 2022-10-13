@@ -1,4 +1,6 @@
 #include "FishPlayer.h"
+
+#include "FishPlayerAnim.h"
 #include "FishPlayerMovement.h"
 #include "Components/StaticMeshComponent.h"
 
@@ -9,6 +11,7 @@ AFishPlayer::AFishPlayer()
 	RootComponent = Collider;
 	Collider->SetVisibility(false);
 	MoveComp = CreateDefaultSubobject<UFishPlayerMovement>(TEXT("MovementComponent"));
+	AnimComp = CreateDefaultSubobject<UFishPlayerAnim>(TEXT("AnimationComponent"));
 }
 
 void AFishPlayer::EnableInput(APlayerController* PlayerController)
