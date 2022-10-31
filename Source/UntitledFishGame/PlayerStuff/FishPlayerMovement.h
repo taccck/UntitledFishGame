@@ -40,6 +40,8 @@ public:
 	bool bIsFishing = false;
 	UPROPERTY(BlueprintReadOnly)
 	bool bOnGround = false;
+	UPROPERTY(BlueprintReadOnly)
+	FVector WalkInput;
 	
 private:
 	UPROPERTY(EditAnywhere, Category = "Move|Look")
@@ -73,7 +75,6 @@ private:
 	
 	TWeakObjectPtr<AFishPlayer> Owner;
 	TWeakObjectPtr<APlayerController> PlayerController;
-	FVector WalkInput;
 	FVector WalkVelocity;
 	FVector GravityVelocity;
 	FVector GroundNormal;

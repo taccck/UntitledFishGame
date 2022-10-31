@@ -4,8 +4,9 @@
 
 class UCurveVector;
 
-USTRUCT(BlueprintType)
-struct FPlayerCurveData
+UCLASS(BlueprintType)
+class UPlayerCurveData : public UDataAsset
+
 {
 	GENERATED_BODY()
 public:
@@ -39,13 +40,13 @@ public:
 
 public:
 	UPROPERTY(EditAnywhere)
-	FPlayerCurveData IdleCurves;
+	UPlayerCurveData* IdleCurves;
 	UPROPERTY(EditAnywhere)
-	FPlayerCurveData WalkCurves;
+	UPlayerCurveData* WalkCurves;
 	UPROPERTY(EditAnywhere)
-	FPlayerCurveData JumpCurves;
+	UPlayerCurveData* JumpCurves;
 	UPROPERTY(EditAnywhere)
-	FPlayerCurveData FallCurves;
+	UPlayerCurveData* FallCurves;
 	
 	UPROPERTY(BlueprintReadOnly)
 	FVector HeadLocation;
