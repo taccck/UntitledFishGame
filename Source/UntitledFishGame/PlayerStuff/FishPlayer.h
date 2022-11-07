@@ -23,6 +23,8 @@ public:
 	UPROPERTY(EditAnywhere)
 	UStaticMeshComponent* Collider;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	USkeletalMeshComponent* Mesh;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UFishPlayerMovement* MoveComp;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UFishPlayerAnim* AnimComp;

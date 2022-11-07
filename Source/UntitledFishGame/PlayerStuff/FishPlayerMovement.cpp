@@ -1,5 +1,6 @@
 #include "FishPlayerMovement.h"
 #include "FishPlayer.h"
+#include "FishPlayerAnim.h"
 
 UFishPlayerMovement::UFishPlayerMovement()
 {
@@ -52,6 +53,7 @@ void UFishPlayerMovement::BeginPlay()
 	PlayerHalfHeight = 33.f;
 	ColShape = FCollisionShape::MakeSphere(PlayerRadius);
 	WalkableSlope += .1f;
+	AnimComp = Owner->AnimComp;
 }
 
 void UFishPlayerMovement::Move(const float DeltaTime) const
@@ -111,15 +113,15 @@ void UFishPlayerMovement::CalculateWalkVelocity(const float DeltaTime)
 		{
 			WalkVelocity = FVector::VectorPlaneProject(WalkVelocity, GroundNormal);
 		}
-		const bool bPassedMaxSpeed = WalkVelocity.SizeSquared() > FMath::Square(WalkSpeed);
+		const bool bPassedMaxSpeed = WalkVelocity.SizeSquared() > FMath::Square(AnimComp->MoveDistance / DeltaTime);
 		if (bPassedMaxSpeed) 
 		{
-			WalkVelocity = WalkVelocity.GetSafeNormal() * WalkSpeed;
+			WalkVelocity = WalkVelocity.GetSafeNormal() * AnimComp->MoveDistance / DeltaTime;
 		}
 		return;
 	}
 	
-	if(WalkVelocity.SizeSquared() > 1.f) //decelerate
+	if(WalkVelocity.SizeSquared() > 0.f) //decelerate
 	{
 		const FVector WalkDirection = WalkVelocity.GetSafeNormal();
 		WalkVelocity -= WalkDirection * (WalkDeceleration * DeltaTime);

@@ -10,6 +10,8 @@ AFishPlayer::AFishPlayer()
 	Collider = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Collider"));
 	RootComponent = Collider;
 	Collider->SetVisibility(false);
+	Mesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("PlayerMesh"));
+	Mesh->SetupAttachment(Collider);
 	MoveComp = CreateDefaultSubobject<UFishPlayerMovement>(TEXT("MovementComponent"));
 	AnimComp = CreateDefaultSubobject<UFishPlayerAnim>(TEXT("AnimationComponent"));
 }

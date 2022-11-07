@@ -3,6 +3,7 @@
 
 class APlayerController;
 class AFishPlayer;
+class UFishPlayerAnim;
 
 UCLASS(Blueprintable)
 class UFishPlayerMovement : public UActorComponent
@@ -72,7 +73,9 @@ private:
 	float JumpInputTime = .2f;
 	UPROPERTY(EditAnywhere, Category = "Move|Jump")
 	float CoyoteTime = .15f;
-	
+
+private:
+	TWeakObjectPtr<UFishPlayerAnim> AnimComp;
 	TWeakObjectPtr<AFishPlayer> Owner;
 	TWeakObjectPtr<APlayerController> PlayerController;
 	FVector WalkVelocity;

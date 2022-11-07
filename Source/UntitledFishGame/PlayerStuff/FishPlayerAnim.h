@@ -3,10 +3,10 @@
 #include "FishPlayerAnim.generated.h"
 
 class UCurveVector;
+class AFishPlayer;
 
 UCLASS(BlueprintType)
 class UPlayerCurveData : public UDataAsset
-
 {
 	GENERATED_BODY()
 public:
@@ -29,6 +29,8 @@ class UFishPlayerAnim : public UActorComponent
 {
 	GENERATED_BODY()
 public:
+	UFishPlayerAnim();
+	
 	UFUNCTION(BlueprintCallable)
 	void Idle();
 	UFUNCTION(BlueprintCallable)
@@ -37,6 +39,9 @@ public:
 	void Jump();
 	UFUNCTION(BlueprintCallable)
 	void Fall();
+
+private:
+	void FootPlanting();
 
 public:
 	UPROPERTY(EditAnywhere)
@@ -58,4 +63,14 @@ public:
 	FVector FootRLocation;
 	UPROPERTY(BlueprintReadOnly)
 	FVector FootLLocation;
+
+	float MoveDistance;
+
+private:
+	UPROPERTY(EditAnywhere)
+	float FootSnappingHeight = 40.f;
+	
+	TWeakObjectPtr<AFishPlayer> Owner;
+	bool PlantedRight;
+	bool PlantedLeft;
 };
