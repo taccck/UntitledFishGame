@@ -93,7 +93,7 @@ void UFishPlayerMovement::GroundCheck()
 	if(GroundSweep.bBlockingHit)
 	{
 		DistanceToGround = GroundSweep.Distance;
-		GroundNormal = GroundSweep.Normal; 
+		GroundNormal = GroundSweep.Normal;
 		bOnGround = acos(FVector::DotProduct(GroundNormal, FVector::UpVector)) * 57.2957795f < WalkableSlope;
 	}
 }

@@ -68,7 +68,7 @@ public:
 
 private:
 	UPROPERTY(EditAnywhere)
-	float FootSnappingHeight = 40.f;
+	float FootSnappingHeight = 22.f;
 	
 	TWeakObjectPtr<AFishPlayer> Owner;
 	bool PlantedRight;

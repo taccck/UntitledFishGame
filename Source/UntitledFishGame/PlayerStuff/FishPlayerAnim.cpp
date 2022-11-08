@@ -42,9 +42,14 @@ void UFishPlayerAnim::Walk()
 	PlantedLeft = !PlantedRight;
 	const FVector NewPlantedFootLocation = PlantedRight? NewFootRLocation : NewFootLLocation;
 	const FVector OldPlantedFootLocation = PlantedRight? FootRLocation : FootLLocation;
-	MoveDistance = (NewPlantedFootLocation - OldPlantedFootLocation).Length();
-	FootRLocation = NewFootRLocation;
-	FootLLocation = NewFootLLocation;
+	MoveDistance = abs(NewPlantedFootLocation.Y - OldPlantedFootLocation.Y);
+
+	FootRLocation.Z = FMath::Lerp(FootRLocation.Z, NewFootRLocation.Z,.1f);
+	FootLLocation.Z = FMath::Lerp(FootLLocation.Z, NewFootLLocation.Z,.1f);
+	FootRLocation.X = NewFootRLocation.X;
+	FootRLocation.Y = NewFootRLocation.Y;
+	FootLLocation.X = NewFootLLocation.X;
+	FootLLocation.Y = NewFootLLocation.Y;
 	FootPlanting();
 }
 
@@ -80,6 +85,7 @@ void UFishPlayerAnim::FootPlanting()
 	const FTransform MeshTransform = Owner->Mesh->GetComponentTransform();
 	if(PlantedRight)
 	{
+		FootRLocation.Z = 0;
 		const FVector WorldLocation = MeshTransform.TransformPosition(FootRLocation);
 		FVector StartLocation = WorldLocation;
 		StartLocation.Z += FootSnappingHeight;
@@ -89,10 +95,12 @@ void UFishPlayerAnim::FootPlanting()
 		GetWorld()->LineTraceSingleByChannel(GroundHit, StartLocation, EndLocation, ECC_Visibility);
 		if(GroundHit.bBlockingHit)
 			FootRLocation.Z = GroundHit.ImpactPoint.Z - MeshTransform.GetLocation().Z;
+		UE_LOG(LogTemp, Log, TEXT("Right: %f"), FootRLocation.Z);
 	}
 
 	if (PlantedLeft)
 	{
+		FootLLocation.Z = 0;
 		const FVector WorldLocation = MeshTransform.TransformPosition(FootLLocation);
 		FVector StartLocation = WorldLocation;
 		StartLocation.Z += FootSnappingHeight;
@@ -102,5 +110,6 @@ void UFishPlayerAnim::FootPlanting()
 		GetWorld()->LineTraceSingleByChannel(GroundHit, StartLocation, EndLocation, ECC_Visibility);
 		if(GroundHit.bBlockingHit)
 			FootLLocation.Z = GroundHit.ImpactPoint.Z - MeshTransform.GetLocation().Z;
+		UE_LOG(LogTemp, Log, TEXT("Left: %f"), FootLLocation.Z);
 	}
 }
