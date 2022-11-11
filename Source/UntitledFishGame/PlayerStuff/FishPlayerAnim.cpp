@@ -9,84 +9,74 @@ UFishPlayerAnim::UFishPlayerAnim()
 	Owner = Cast<AFishPlayer>(GetOwner());
 }
 
-void UFishPlayerAnim::Idle()
+void UFishPlayerAnim::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
-	const float WorldTime = GetWorld()->GetTimeSeconds();
-	const float AnimTime = IdleCurves->AnimTime;
-	const float Time = WorldTime - static_cast<int>(WorldTime / AnimTime) * AnimTime;
-	
-	HeadLocation = IdleCurves->HeadCurve->GetVectorValue(Time);
-	HandRLocation = IdleCurves->HandRCurve->GetVectorValue(Time);
-	HandLLocation = IdleCurves->HandLCurve->GetVectorValue(Time);
-	FootRLocation = IdleCurves->FootRCurve->GetVectorValue(Time);
-	FootLLocation = IdleCurves->FootLCurve->GetVectorValue(Time);
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
+	Animate(DeltaTime);
+}
+
+void UFishPlayerAnim::ToIdleState()
+{
+	CurrentCurves = IdleCurves;
+	AnimState = "Idle";
+	
 	PlantedRight = true;
 	PlantedLeft = true;
-	FootPlanting();
 }
 
-void UFishPlayerAnim::Walk()
+void UFishPlayerAnim::ToWalkState()
 {
-	const float WorldTime = GetWorld()->GetTimeSeconds();
-	const float AnimTime = WalkCurves->AnimTime;
-	const float Time = WorldTime - static_cast<int>(WorldTime / AnimTime) * AnimTime;
-	
-	HeadLocation = WalkCurves->HeadCurve->GetVectorValue(Time);
-	HandRLocation = WalkCurves->HandRCurve->GetVectorValue(Time);
-	HandLLocation = WalkCurves->HandLCurve->GetVectorValue(Time);
-	const FVector NewFootRLocation = WalkCurves->FootRCurve->GetVectorValue(Time);
-	const FVector NewFootLLocation = WalkCurves->FootLCurve->GetVectorValue(Time);
-	
-	PlantedRight = Time > AnimTime / 2.f; //swap planted on contact pos
-	PlantedLeft = !PlantedRight;
-	const FVector NewPlantedFootLocation = PlantedRight? NewFootRLocation : NewFootLLocation;
-	const FVector OldPlantedFootLocation = PlantedRight? FootRLocation : FootLLocation;
-	MoveDistance = abs(NewPlantedFootLocation.Y - OldPlantedFootLocation.Y);
-
-	FootRLocation.Z = FMath::Lerp(FootRLocation.Z, NewFootRLocation.Z,.1f);
-	FootLLocation.Z = FMath::Lerp(FootLLocation.Z, NewFootLLocation.Z,.1f);
-	FootRLocation.X = NewFootRLocation.X;
-	FootRLocation.Y = NewFootRLocation.Y;
-	FootLLocation.X = NewFootLLocation.X;
-	FootLLocation.Y = NewFootLLocation.Y;
-	FootPlanting();
+	CurrentCurves = WalkCurves;
+	AnimState = "Walk";
 }
 
-void UFishPlayerAnim::Jump()
+void UFishPlayerAnim::ToJumpState()
 {
-	const float WorldTime = GetWorld()->GetTimeSeconds();
-	const float AnimTime = IdleCurves->AnimTime;
-	const float Time = WorldTime - static_cast<int>(WorldTime / AnimTime) * AnimTime;
-	
-	HeadLocation = JumpCurves->HeadCurve->GetVectorValue(Time);
-	HandRLocation = JumpCurves->HandRCurve->GetVectorValue(Time);
-	HandLLocation = JumpCurves->HandLCurve->GetVectorValue(Time);
+	CurrentCurves = JumpCurves;
+	AnimState = "Jump";
 }
 
-void UFishPlayerAnim::Fall()
+void UFishPlayerAnim::ToFallState()
 {
-	const float WorldTime = GetWorld()->GetTimeSeconds();
-	const float AnimTime = FallCurves->AnimTime;
-	const float Time = WorldTime - static_cast<int>(WorldTime / AnimTime) * AnimTime;
-	
-	HeadLocation = FallCurves->HeadCurve->GetVectorValue(Time);
-	HandRLocation = FallCurves->HandRCurve->GetVectorValue(Time);
-	HandLLocation = FallCurves->HandLCurve->GetVectorValue(Time);
-	FootRLocation = FallCurves->FootRCurve->GetVectorValue(Time);
-	FootLLocation = FallCurves->FootLCurve->GetVectorValue(Time);
+	CurrentCurves = FallCurves;
+	AnimState = "Fall";
 	
 	PlantedRight = false;
 	PlantedLeft = false;
 }
 
+
+void UFishPlayerAnim::UpdatePose()
+{
+	//move to next frame in the animation
+	
+	const float WorldTime = GetWorld()->GetTimeSeconds();
+	const float AnimTime = CurrentCurves->AnimTime;
+	const float Time = WorldTime - static_cast<int>(WorldTime / AnimTime) * AnimTime;
+    	
+	NextPose.HeadLocation = CurrentCurves->HeadCurve->GetVectorValue(Time);
+	NextPose.HandRLocation = CurrentCurves->HandRCurve->GetVectorValue(Time);
+	NextPose.HandLLocation = CurrentCurves->HandLCurve->GetVectorValue(Time);
+	NextPose.FootRLocation = CurrentCurves->FootRCurve->GetVectorValue(Time);
+	NextPose.FootLLocation = CurrentCurves->FootLCurve->GetVectorValue(Time);
+
+	if(AnimState == "Walk")
+	{
+		PlantedRight = Time > AnimTime / 2.f; //swap planted on contact pos
+		PlantedLeft = !PlantedRight;
+	}
+}
+
 void UFishPlayerAnim::FootPlanting()
 {
+	//makes sure feet are on the ground when they should be
+	
 	const FTransform MeshTransform = Owner->Mesh->GetComponentTransform();
 	if(PlantedRight)
 	{
-		FootRLocation.Z = 0;
-		const FVector WorldLocation = MeshTransform.TransformPosition(FootRLocation);
+		NextPose.FootRLocation.Z = 0;
+		const FVector WorldLocation = MeshTransform.TransformPosition(NextPose.FootRLocation);
 		FVector StartLocation = WorldLocation;
 		StartLocation.Z += FootSnappingHeight;
 		FVector EndLocation = WorldLocation;
@@ -94,14 +84,13 @@ void UFishPlayerAnim::FootPlanting()
 		FHitResult GroundHit;
 		GetWorld()->LineTraceSingleByChannel(GroundHit, StartLocation, EndLocation, ECC_Visibility);
 		if(GroundHit.bBlockingHit)
-			FootRLocation.Z = GroundHit.ImpactPoint.Z - MeshTransform.GetLocation().Z;
-		UE_LOG(LogTemp, Log, TEXT("Right: %f"), FootRLocation.Z);
+			NextPose.FootRLocation.Z = GroundHit.ImpactPoint.Z - MeshTransform.GetLocation().Z;
 	}
 
 	if (PlantedLeft)
 	{
-		FootLLocation.Z = 0;
-		const FVector WorldLocation = MeshTransform.TransformPosition(FootLLocation);
+		NextPose.FootLLocation.Z = 0;
+		const FVector WorldLocation = MeshTransform.TransformPosition(NextPose.FootLLocation);
 		FVector StartLocation = WorldLocation;
 		StartLocation.Z += FootSnappingHeight;
 		FVector EndLocation = WorldLocation;
@@ -109,7 +98,43 @@ void UFishPlayerAnim::FootPlanting()
 		FHitResult GroundHit;
 		GetWorld()->LineTraceSingleByChannel(GroundHit, StartLocation, EndLocation, ECC_Visibility);
 		if(GroundHit.bBlockingHit)
-			FootLLocation.Z = GroundHit.ImpactPoint.Z - MeshTransform.GetLocation().Z;
-		UE_LOG(LogTemp, Log, TEXT("Left: %f"), FootLLocation.Z);
+			NextPose.FootLLocation.Z = GroundHit.ImpactPoint.Z - MeshTransform.GetLocation().Z;
 	}
+}
+
+void UFishPlayerAnim::ApplyMaxSpeed(const float DeltaTime)
+{
+	const float MaxDistance = MaxAnimSpeed * DeltaTime;
+	auto Apply = [&](const FVector New, const FVector Old)->FVector
+	{
+		const float CurrDistance = FVector::Distance(Old, New);
+		if (CurrDistance > MaxDistance)
+		{
+			return Old + (New - Old).GetSafeNormal() * MaxDistance;
+		}
+		return New;
+	};
+	
+	NextPose.HeadLocation = Apply(NextPose.HeadLocation, CurrentPose.HeadLocation);
+	NextPose.HandRLocation = Apply(NextPose.HandRLocation, CurrentPose.HandRLocation);
+	NextPose.HandLLocation = Apply(NextPose.HandLLocation, CurrentPose.HandLLocation);
+	NextPose.FootRLocation = Apply(NextPose.FootRLocation, CurrentPose.FootRLocation);
+	NextPose.FootLLocation = Apply(NextPose.FootLLocation, CurrentPose.FootLLocation);
+}
+
+void UFishPlayerAnim::Animate(const float DeltaTime)
+{
+	if(!CurrentCurves.IsValid()) return;
+	
+	UpdatePose();
+	FootPlanting();
+	ApplyMaxSpeed(DeltaTime);
+
+	if(AnimState == "Walk")
+	{
+		const FVector NewPlantedFootLocation = PlantedRight? NextPose.FootRLocation : NextPose.FootLLocation;
+		const FVector OldPlantedFootLocation = PlantedRight? CurrentPose.FootRLocation : CurrentPose.FootLLocation;
+		MoveDistance = abs(NewPlantedFootLocation.Y - OldPlantedFootLocation.Y);
+	}
+	CurrentPose = NextPose;
 }

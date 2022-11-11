@@ -24,35 +24,11 @@ public:
 	UCurveVector* FootLCurve;
 };
 
-UCLASS(Blueprintable)
-class UFishPlayerAnim : public UActorComponent
+USTRUCT(BlueprintType)
+struct FSkeletonPose
 {
 	GENERATED_BODY()
 public:
-	UFishPlayerAnim();
-	
-	UFUNCTION(BlueprintCallable)
-	void Idle();
-	UFUNCTION(BlueprintCallable)
-	void Walk();
-	UFUNCTION(BlueprintCallable)
-	void Jump();
-	UFUNCTION(BlueprintCallable)
-	void Fall();
-
-private:
-	void FootPlanting();
-
-public:
-	UPROPERTY(EditAnywhere)
-	UPlayerCurveData* IdleCurves;
-	UPROPERTY(EditAnywhere)
-	UPlayerCurveData* WalkCurves;
-	UPROPERTY(EditAnywhere)
-	UPlayerCurveData* JumpCurves;
-	UPROPERTY(EditAnywhere)
-	UPlayerCurveData* FallCurves;
-	
 	UPROPERTY(BlueprintReadOnly)
 	FVector HeadLocation;
 	UPROPERTY(BlueprintReadOnly)
@@ -63,14 +39,59 @@ public:
 	FVector FootRLocation;
 	UPROPERTY(BlueprintReadOnly)
 	FVector FootLLocation;
+};
+
+UCLASS(Blueprintable)
+class UFishPlayerAnim : public UActorComponent
+{
+	GENERATED_BODY()
+public:
+	UFishPlayerAnim();
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	
+	UFUNCTION(BlueprintCallable)
+	void ToIdleState();
+	UFUNCTION(BlueprintCallable)
+	void ToWalkState();
+	UFUNCTION(BlueprintCallable)
+	void ToJumpState();
+	UFUNCTION(BlueprintCallable)
+	void ToFallState();
+
+private:
+	void UpdatePose();
+	void FootPlanting();
+	void ApplyMaxSpeed(const float DeltaTime);
+	void Animate(const float DeltaTime);
+
+public:
+	UPROPERTY(EditAnywhere)
+	UPlayerCurveData* IdleCurves;
+	UPROPERTY(EditAnywhere)
+	UPlayerCurveData* WalkCurves;
+	UPROPERTY(EditAnywhere)
+	UPlayerCurveData* JumpCurves;
+	UPROPERTY(EditAnywhere)
+	UPlayerCurveData* FallCurves;
+
+	UPROPERTY(BlueprintReadOnly)
+	FSkeletonPose CurrentPose;
+	UPROPERTY(BlueprintReadOnly)
+	FSkeletonPose NextPose;
+
+	UPROPERTY(BlueprintReadOnly)
+	FString AnimState;
 
 	float MoveDistance;
 
 private:
 	UPROPERTY(EditAnywhere)
 	float FootSnappingHeight = 22.f;
+	UPROPERTY(EditAnywhere)
+	float MaxAnimSpeed = 100.f;
 	
 	TWeakObjectPtr<AFishPlayer> Owner;
+	TWeakObjectPtr<UPlayerCurveData> CurrentCurves;
 	bool PlantedRight;
 	bool PlantedLeft;
 };
