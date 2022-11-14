@@ -1,74 +1,101 @@
-#include "FishPlayerAnim.h"
+#include "FishPlayerAnimInstance.h"
 
 #include "FishPlayer.h"
+#include "FishPlayerMovement.h"
 #include "Curves/CurveVector.h"
 
-UFishPlayerAnim::UFishPlayerAnim()
+UFishPlayerAnimInstance::UFishPlayerAnimInstance()
 {
-	PrimaryComponentTick.bCanEverTick = true;
-	Owner = Cast<AFishPlayer>(GetOwner());
+	FootColShape = FCollisionShape::MakeSphere(6.f);
 }
 
-void UFishPlayerAnim::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+void UFishPlayerAnimInstance::NativeUpdateAnimation(float DeltaTime)
 {
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
+	PickState();
 	Animate(DeltaTime);
 }
 
-void UFishPlayerAnim::ToIdleState()
+void UFishPlayerAnimInstance::NativeBeginPlay()
 {
+	Owner = Cast<AFishPlayer>(GetSkelMeshComponent()->GetOwner());
+	MoveComp = Owner->MoveComp;
+	ToIdleState();
+}
+
+void UFishPlayerAnimInstance::ToIdleState()
+{
+	if(AnimState == EPlayerAnimState::Idle) return;
+	
 	CurrentCurves = IdleCurves;
-	AnimState = "Idle";
+	AnimState = EPlayerAnimState::Idle;
+	AnimStartTime = GetWorld()->GetTimeSeconds();
 	
 	PlantedRight = true;
 	PlantedLeft = true;
 }
 
-void UFishPlayerAnim::ToWalkState()
+void UFishPlayerAnimInstance::ToWalkState()
 {
+	if(AnimState == EPlayerAnimState::Walk) return;
+	
 	CurrentCurves = WalkCurves;
-	AnimState = "Walk";
+	AnimState = EPlayerAnimState::Walk;
+	AnimStartTime = GetWorld()->GetTimeSeconds();
 }
 
-void UFishPlayerAnim::ToJumpState()
+void UFishPlayerAnimInstance::ToJumpState()
 {
+	if(AnimState == EPlayerAnimState::Jump) return;
+	
 	CurrentCurves = JumpCurves;
-	AnimState = "Jump";
+	AnimState = EPlayerAnimState::Jump;
+	AnimStartTime = GetWorld()->GetTimeSeconds();
 }
 
-void UFishPlayerAnim::ToFallState()
+void UFishPlayerAnimInstance::ToFallState()
 {
+	if(AnimState == EPlayerAnimState::Fall) return;
+	
 	CurrentCurves = FallCurves;
-	AnimState = "Fall";
+	AnimState = EPlayerAnimState::Fall;
+	AnimStartTime = GetWorld()->GetTimeSeconds();
 	
 	PlantedRight = false;
 	PlantedLeft = false;
 }
 
+void UFishPlayerAnimInstance::PickState()
+{
+	if(!MoveComp.IsValid()) return;
+	
+	if(MoveComp->WalkInput.SquaredLength() > 0)
+		ToWalkState();
+	else
+		ToIdleState();
+}
 
-void UFishPlayerAnim::UpdatePose()
+void UFishPlayerAnimInstance::UpdatePose()
 {
 	//move to next frame in the animation
 	
-	const float WorldTime = GetWorld()->GetTimeSeconds();
+	const float WorldTime = GetWorld()->GetTimeSeconds() - AnimStartTime;
 	const float AnimTime = CurrentCurves->AnimTime;
 	const float Time = WorldTime - static_cast<int>(WorldTime / AnimTime) * AnimTime;
-    	
+	
 	NextPose.HeadLocation = CurrentCurves->HeadCurve->GetVectorValue(Time);
 	NextPose.HandRLocation = CurrentCurves->HandRCurve->GetVectorValue(Time);
 	NextPose.HandLLocation = CurrentCurves->HandLCurve->GetVectorValue(Time);
 	NextPose.FootRLocation = CurrentCurves->FootRCurve->GetVectorValue(Time);
 	NextPose.FootLLocation = CurrentCurves->FootLCurve->GetVectorValue(Time);
-
-	if(AnimState == "Walk")
+	
+	if(AnimState == EPlayerAnimState::Walk)
 	{
 		PlantedRight = Time > AnimTime / 2.f; //swap planted on contact pos
 		PlantedLeft = !PlantedRight;
 	}
 }
 
-void UFishPlayerAnim::FootPlanting()
+void UFishPlayerAnimInstance::FootPlanting()
 {
 	//makes sure feet are on the ground when they should be
 	
@@ -82,7 +109,7 @@ void UFishPlayerAnim::FootPlanting()
 		FVector EndLocation = WorldLocation;
 		EndLocation.Z -= FootSnappingHeight;
 		FHitResult GroundHit;
-		GetWorld()->LineTraceSingleByChannel(GroundHit, StartLocation, EndLocation, ECC_Visibility);
+		GetWorld()->SweepSingleByChannel(GroundHit, StartLocation, EndLocation, FQuat::Identity, ECC_Visibility, FootColShape);
 		if(GroundHit.bBlockingHit)
 			NextPose.FootRLocation.Z = GroundHit.ImpactPoint.Z - MeshTransform.GetLocation().Z;
 	}
@@ -102,15 +129,16 @@ void UFishPlayerAnim::FootPlanting()
 	}
 }
 
-void UFishPlayerAnim::ApplyMaxSpeed(const float DeltaTime)
+void UFishPlayerAnimInstance::ApplyMaxSpeed(const float DeltaTime)
 {
 	const float MaxDistance = MaxAnimSpeed * DeltaTime;
+	const float CurrentMaxDistance = FMath::Lerp(MaxDistance / 2.f, MaxDistance, FMath::Clamp(MoveComp->WalkInput.Length(), 0.f,1.f));
 	auto Apply = [&](const FVector New, const FVector Old)->FVector
 	{
 		const float CurrDistance = FVector::Distance(Old, New);
-		if (CurrDistance > MaxDistance)
+		if (CurrDistance > CurrentMaxDistance)
 		{
-			return Old + (New - Old).GetSafeNormal() * MaxDistance;
+			return Old + (New - Old).GetSafeNormal() * CurrentMaxDistance;
 		}
 		return New;
 	};
@@ -122,7 +150,7 @@ void UFishPlayerAnim::ApplyMaxSpeed(const float DeltaTime)
 	NextPose.FootLLocation = Apply(NextPose.FootLLocation, CurrentPose.FootLLocation);
 }
 
-void UFishPlayerAnim::Animate(const float DeltaTime)
+void UFishPlayerAnimInstance::Animate(const float DeltaTime)
 {
 	if(!CurrentCurves.IsValid()) return;
 	
@@ -130,11 +158,11 @@ void UFishPlayerAnim::Animate(const float DeltaTime)
 	FootPlanting();
 	ApplyMaxSpeed(DeltaTime);
 
-	if(AnimState == "Walk")
+	if(AnimState == EPlayerAnimState::Walk)
 	{
 		const FVector NewPlantedFootLocation = PlantedRight? NextPose.FootRLocation : NextPose.FootLLocation;
 		const FVector OldPlantedFootLocation = PlantedRight? CurrentPose.FootRLocation : CurrentPose.FootLLocation;
-		MoveDistance = abs(NewPlantedFootLocation.Y - OldPlantedFootLocation.Y);
+		MoveComp->WalkDistance = abs(NewPlantedFootLocation.Y - OldPlantedFootLocation.Y);
 	}
 	CurrentPose = NextPose;
 }

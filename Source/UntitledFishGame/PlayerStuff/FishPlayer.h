@@ -5,7 +5,6 @@ class UCapsuleComponent;
 class UInputComponent;
 class UFishPlayerMovement;
 class UStaticMeshComponent;
-class UFishPlayerAnim;
 
 UCLASS(Abstract)
 class AFishPlayer : public AActor
@@ -26,6 +25,4 @@ public:
 	USkeletalMeshComponent* Mesh;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UFishPlayerMovement* MoveComp;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	UFishPlayerAnim* AnimComp;
 };

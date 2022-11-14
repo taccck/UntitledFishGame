@@ -1,8 +1,8 @@
 #pragma once
-
-#include "FishPlayerAnim.generated.h"
+#include "FishPlayerAnimInstance.generated.h"
 
 class UCurveVector;
+class UFishPlayerMovement;
 class AFishPlayer;
 
 UCLASS(BlueprintType)
@@ -27,8 +27,7 @@ public:
 USTRUCT(BlueprintType)
 struct FSkeletonPose
 {
-	GENERATED_BODY()
-public:
+	GENERATED_BODY() //should set default values here
 	UPROPERTY(BlueprintReadOnly)
 	FVector HeadLocation;
 	UPROPERTY(BlueprintReadOnly)
@@ -41,13 +40,23 @@ public:
 	FVector FootLLocation;
 };
 
-UCLASS(Blueprintable)
-class UFishPlayerAnim : public UActorComponent
+UENUM(BlueprintType)
+enum class EPlayerAnimState : uint8
+{
+	Idle UMETA(DisplayName = "Idle"),
+	Walk UMETA(DisplayName = "Walk"),
+	Jump UMETA(DisplayName = "Jump"),
+	Fall UMETA(DisplayName = "Fall")
+};
+
+UCLASS()
+class UFishPlayerAnimInstance : public UAnimInstance
 {
 	GENERATED_BODY()
 public:
-	UFishPlayerAnim();
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	UFishPlayerAnimInstance();
+	virtual void NativeUpdateAnimation(float DeltaTime) override;
+	virtual void NativeBeginPlay() override;
 	
 	UFUNCTION(BlueprintCallable)
 	void ToIdleState();
@@ -59,6 +68,7 @@ public:
 	void ToFallState();
 
 private:
+	void PickState();
 	void UpdatePose();
 	void FootPlanting();
 	void ApplyMaxSpeed(const float DeltaTime);
@@ -80,18 +90,19 @@ public:
 	FSkeletonPose NextPose;
 
 	UPROPERTY(BlueprintReadOnly)
-	FString AnimState;
-
-	float MoveDistance;
+	EPlayerAnimState AnimState;
+	UPROPERTY(EditAnywhere)
+	float MaxAnimSpeed = 150.f;
 
 private:
 	UPROPERTY(EditAnywhere)
-	float FootSnappingHeight = 22.f;
-	UPROPERTY(EditAnywhere)
-	float MaxAnimSpeed = 100.f;
+	float FootSnappingHeight = 21.f;
 	
 	TWeakObjectPtr<AFishPlayer> Owner;
+	TWeakObjectPtr<UFishPlayerMovement> MoveComp;
 	TWeakObjectPtr<UPlayerCurveData> CurrentCurves;
+	FCollisionShape FootColShape;
+	float AnimStartTime;
 	bool PlantedRight;
 	bool PlantedLeft;
 };

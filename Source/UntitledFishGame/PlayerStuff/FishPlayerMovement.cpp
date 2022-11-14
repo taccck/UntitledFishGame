@@ -1,6 +1,5 @@
 #include "FishPlayerMovement.h"
 #include "FishPlayer.h"
-#include "FishPlayerAnim.h"
 
 UFishPlayerMovement::UFishPlayerMovement()
 {
@@ -53,7 +52,6 @@ void UFishPlayerMovement::BeginPlay()
 	PlayerHalfHeight = 33.f;
 	ColShape = FCollisionShape::MakeSphere(PlayerRadius);
 	WalkableSlope += .1f;
-	AnimComp = Owner->AnimComp;
 }
 
 void UFishPlayerMovement::Move(const float DeltaTime) const
@@ -107,16 +105,16 @@ void UFishPlayerMovement::CalculateWalkVelocity(const float DeltaTime)
 		const float AngleToRotate = PlayerController->GetControlRotation().Yaw;
 		const FVector WalkDirection = WalkInput.RotateAngleAxis(AngleToRotate, FVector::UpVector);
 		TargetRotation = WalkDirection.ToOrientationQuat();
-		WalkVelocity += WalkDirection.GetSafeNormal() * InputSize * (WalkAcceleration * DeltaTime);
+		WalkVelocity += WalkDirection.GetSafeNormal() * (WalkAcceleration * DeltaTime);
 		const bool bWalkingDown = bOnGround && FVector::DotProduct(GroundNormal.GetSafeNormal2D(), WalkInput.GetSafeNormal2D()) > 0.f;
 		if (bWalkingDown)
 		{
 			WalkVelocity = FVector::VectorPlaneProject(WalkVelocity, GroundNormal);
 		}
-		const bool bPassedMaxSpeed = WalkVelocity.SizeSquared() > FMath::Square(AnimComp->MoveDistance / DeltaTime);
+		const bool bPassedMaxSpeed = WalkVelocity.SizeSquared() > FMath::Square(WalkDistance / DeltaTime);
 		if (bPassedMaxSpeed) 
 		{
-			WalkVelocity = WalkVelocity.GetSafeNormal() * AnimComp->MoveDistance / DeltaTime;
+			WalkVelocity = WalkVelocity.GetSafeNormal() * WalkDistance / DeltaTime;
 		}
 		return;
 	}

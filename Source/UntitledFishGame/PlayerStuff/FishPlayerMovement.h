@@ -3,7 +3,6 @@
 
 class APlayerController;
 class AFishPlayer;
-class UFishPlayerAnim;
 
 UCLASS(Blueprintable)
 class UFishPlayerMovement : public UActorComponent
@@ -44,6 +43,8 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	FVector WalkInput;
 	
+	float WalkDistance;
+	
 private:
 	UPROPERTY(EditAnywhere, Category = "Move|Look")
 	float GamepadTurnRate = 100.f;
@@ -51,8 +52,6 @@ private:
 	float MouseSensitivity = .5f;
 	UPROPERTY(EditAnywhere, Category = "Move|Look")
 	float RotationSpeed = 8.f;
-	UPROPERTY(EditAnywhere, Category = "Move|Walk")
-	float WalkSpeed = 300.f;
 	UPROPERTY(EditAnywhere, Category = "Move|Walk")
 	float WalkAcceleration = 3000.f;
 	UPROPERTY(EditAnywhere, Category = "Move|Walk")
@@ -74,8 +73,6 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Move|Jump")
 	float CoyoteTime = .15f;
 
-private:
-	TWeakObjectPtr<UFishPlayerAnim> AnimComp;
 	TWeakObjectPtr<AFishPlayer> Owner;
 	TWeakObjectPtr<APlayerController> PlayerController;
 	FVector WalkVelocity;
