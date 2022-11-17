@@ -151,25 +151,31 @@ void UFishPlayerMovement::CalculateGravityVelocity(const float DeltaTime)
 	
 	if(bOnGround)
 	{
-		GravityVelocity = FVector::ZeroVector;
+		//GravityVelocity = FVector::ZeroVector;
 		CurrentCoyoteTime = 0.f;
 		return;
 	}
 
 	CurrentCoyoteTime += DeltaTime;
-	const bool bPassedTerminalVelocity = GravityVelocity.SizeSquared() < FMath::Square(TerminalFallSpeed);
-	if (bPassedTerminalVelocity)
+	const bool bNotPassedTerminalVelocity = GravityVelocity.SizeSquared() < FMath::Square(TerminalFallSpeed);
+	if (bNotPassedTerminalVelocity)
 	{
 		GravityVelocity += FVector::DownVector * (GravityAcceleration * DeltaTime);
 	}
 }
 
-void UFishPlayerMovement::FloatUp(const float DeltaTime) const
+void UFishPlayerMovement::FloatUp(const float DeltaTime) 
 {
 	if (DistanceToGround < FloatHeight)
 	{
-		const float DistToMove = FMath::Clamp(FloatSpeed * DeltaTime, 0.f, FloatHeight - DistanceToGround);
-		Owner->AddActorWorldOffset(FVector::UpVector * DistToMove);
+		GravityVelocity += FVector::UpVector * (FloatAcceleration * DeltaTime);
+
+		const bool bTooFarUpOrDown = GravityVelocity.Z * DeltaTime > FloatHeight - DistanceToGround ||
+			GravityVelocity.Z < 0.f && DistanceToGround < 1.f;
+		if(bTooFarUpOrDown)
+		{
+			GravityVelocity = FVector::Zero();
+		}
 	}
 }
 

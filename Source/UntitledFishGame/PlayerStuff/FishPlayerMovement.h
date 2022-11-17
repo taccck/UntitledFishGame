@@ -22,7 +22,7 @@ private:
 	void GroundCheck();
 	void CalculateWalkVelocity(const float DeltaTime);
 	void CalculateGravityVelocity(const float DeltaTime);
-	void FloatUp(const float DeltaTime) const;
+	void FloatUp(const float DeltaTime);
 	void Rotate(const float DeltaTime) const;
 
 	void Jump();
@@ -61,7 +61,7 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Move|Float")
 	float FloatHeight = 20.5f;
 	UPROPERTY(EditAnywhere, Category = "Move|Float")
-	float FloatSpeed = 125.f;
+	float FloatAcceleration = 3000.f;
 	UPROPERTY(EditAnywhere, Category = "Move|Gravity")
 	float GravityAcceleration = 3000.f;
 	UPROPERTY(EditAnywhere, Category = "Move|Gravity")
